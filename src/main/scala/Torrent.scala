@@ -1,7 +1,8 @@
 import benc.BDecoder.{instance, utf8StringBDecoder}
 import benc.{BDecoder, BencError}
+import scodec.bits.ByteVector
 
-final case class Info(pieceLength: Int)
+final case class Info(pieceLength: Long, pieces: ByteVector, name: String, length: Long)
 
 final case class Announce(url: String)
 
@@ -23,8 +24,14 @@ object Torrent {
     val optionInfo = for {
       m <- bt.bmap
       pieceLengthBencoded <- m.get("piece length")
-      pieceLength <- BDecoder[Int].decode(pieceLengthBencoded).toOption
-    } yield Info(pieceLength)
+      pieceLength <- BDecoder[Long].decode(pieceLengthBencoded).toOption
+      piecesBencoded <- m.get("pieces")
+      pieces <- piecesBencoded.bstring.map(_.toByteVector)
+      nameBencoded <- m.get("name")
+      name <- BDecoder[String].decode(nameBencoded).toOption
+      lengthBencoded <- m.get("length")
+      length <- BDecoder[Long].decode(lengthBencoded).toOption
+    } yield Info(pieceLength, pieces, name, length)
     optionInfo.toRight(BencError.CodecError("Empty"))
   }
 
