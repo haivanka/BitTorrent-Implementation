@@ -5,7 +5,7 @@ import scodec.bits.BitVector
 
 import java.io.{File, FileInputStream}
 
-object EntryPoint extends IOApp.Simple {
+object Main extends IOApp.Simple {
 
   def run: IO[Unit] = {
     val file = new File("ubuntu.torrent")
@@ -15,7 +15,7 @@ object EntryPoint extends IOApp.Simple {
       for {
         bytes <- IO.blocking(inputStream.readAllBytes())
         torrent <- parseTorrentFromBytes(bytes)
-        _ <- IO.println(torrent)
+        _ <- Client.start(torrent)
       } yield ()
     }
   }
