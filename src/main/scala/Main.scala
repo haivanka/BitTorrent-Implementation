@@ -2,12 +2,17 @@ import Torrent.torrentDecoder
 import benc._
 import cats.effect.{IO, IOApp, Resource}
 import scodec.bits.BitVector
+import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
+import sttp.client3.{HttpURLConnectionBackend, UriContext, basicRequest}
 
 import java.io.{File, FileInputStream}
 
 object Main extends IOApp.Simple {
 
   def run: IO[Unit] = {
+    val request =
+      basicRequest.get(uri"https://www.google.com/search?q=cats")
+
     val file = new File("ubuntu.torrent")
     val inputStreamResource = createInputStreamResource(file)
 
@@ -15,7 +20,11 @@ object Main extends IOApp.Simple {
       for {
         bytes <- IO.blocking(inputStream.readAllBytes())
         torrent <- parseTorrentFromBytes(bytes)
-        _ <- Client.start(torrent)
+        _ <- IO.println(torrent)
+        backend <- AsyncHttpClientCatsBackend[IO]()
+        response <- request.send(backend)
+        _ <- IO.println(response)
+        _ <- backend.close()
       } yield ()
     }
   }
