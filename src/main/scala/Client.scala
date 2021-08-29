@@ -13,7 +13,8 @@ object Client {
       _ <- peersStateRef.update(currentPeersState => currentPeersState.addNewPeers(peers))
       state <- peersStateRef.get
       _ <- IO.println(state)
-      _ <- peers.keySet.toSeq.take(5).flatMap(MessageSocket.apply).parSequence
+      socketResources = peers.keySet.toSeq.take(5).map(MessageSocket.apply)
+      _ <- socketResources.map(socketResource => socketResource.use(PeerCommunication.apply)).parSequence
       _ <- IO.sleep(30.seconds)
     } yield ()
   }
