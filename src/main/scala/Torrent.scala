@@ -1,8 +1,4 @@
-import benc.BDecoder.{instance, utf8StringBDecoder}
-import benc.{BDecoder, BencError}
 import scodec.bits.ByteVector
-
-import java.util.Base64
 
 final case class Info(pieceLength: Long, pieces: ByteVector, name: String, length: Long, bencodedInfo: ByteVector) {
   val infoHash = {

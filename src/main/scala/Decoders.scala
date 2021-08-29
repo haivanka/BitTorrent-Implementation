@@ -1,4 +1,3 @@
-import BinaryHelper.peerAddressCodec
 import PeerAddress.parsePeerAddressesFromBits
 import benc.BDecoder.{bitVectorBDecoder, instance, longBDecoder, utf8StringBDecoder}
 import benc.{BDecoder, BencError}
