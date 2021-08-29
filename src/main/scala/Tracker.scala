@@ -1,7 +1,6 @@
 import Decoders.announceResponseDecoder
-import benc.BDecoder.{instance, longBDecoder}
-import benc.{BDecoder, Benc, BencError}
-import cats.effect.IO
+import benc.Benc
+import cats.effect.{IO, Resource}
 import scodec.bits.{BitVector, ByteVector}
 import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.client3.{UriContext, asByteArrayAlways, basicRequest}
@@ -9,8 +8,7 @@ import sttp.model.Uri
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.{Duration, DurationInt}
+import scala.concurrent.duration.Duration
 
 case class AnnounceResponse(interval: Duration, peerAddresses: List[PeerAddress])
 
@@ -18,16 +16,14 @@ object Tracker {
   val defaultPeerId: ByteVector = ByteVector.view("-TRTS01-".getBytes).padRight(20)
 
   def sendFirstAnnounce(torrent: Torrent): IO[AnnounceResponse] = {
-    for {
-      backend <- AsyncHttpClientCatsBackend[IO]()
-      request = createRequestWithParams(torrent, createRequestParams(torrent))
-      _ <- IO.println(request)
-      response <- backend.send(request)
-      _ <- IO.println(response)
-      announceResponse <- IO.fromEither(response.body)
-      _ <- IO.println(announceResponse)
-      _ <- backend.close()
-    } yield announceResponse
+    Resource.make(AsyncHttpClientCatsBackend[IO]())(_.close()).use { backend =>
+      val request =
+        createRequestWithParams(torrent, createRequestParams(torrent))
+      backend
+        .send(request)
+        .map(_.body)
+        .flatMap(IO.fromEither(_))
+    }
   }
 
   private def createRequestWithParams(torrent: Torrent, params: Map[String, String]) = {
@@ -49,6 +45,13 @@ object Tracker {
       .mapResponse(Benc.fromBenc[AnnounceResponse])
   }
 
+  private def encode(byteVector: ByteVector): String = {
+    URLEncoder.encode(
+      new String(byteVector.toArray, StandardCharsets.ISO_8859_1),
+      StandardCharsets.ISO_8859_1
+    )
+  }
+
   private def createRequestParams(torrent: Torrent): Map[String, String] = {
     Map(
       "port" -> "6881",
@@ -58,13 +61,6 @@ object Tracker {
       "compact" -> "1",
       "event" -> "started",
       "left" -> s"${torrent.info.length}"
-    )
-  }
-
-  private def encode(byteVector: ByteVector): String = {
-    URLEncoder.encode(
-      new String(byteVector.toArray, StandardCharsets.ISO_8859_1),
-      StandardCharsets.ISO_8859_1
     )
   }
 }
