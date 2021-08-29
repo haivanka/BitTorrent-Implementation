@@ -2,7 +2,17 @@ import benc.BDecoder.{instance, utf8StringBDecoder}
 import benc.{BDecoder, BencError}
 import scodec.bits.ByteVector
 
-final case class Info(pieceLength: Long, pieces: ByteVector, name: String, length: Long, bencodedInfo: ByteVector)
+import java.util.Base64
+
+final case class Info(pieceLength: Long, pieces: ByteVector, name: String, length: Long, bencodedInfo: ByteVector) {
+  val infoHash = {
+    val md = java.security.MessageDigest.getInstance("SHA-1")
+    val infoHashBytes = Base64.getEncoder.encode(md.digest(bencodedInfo.toArray))
+    ByteVector(infoHashBytes)
+  }
+
+  val pieceCount = pieces.length / 20
+}
 
 final case class Announce(url: String)
 

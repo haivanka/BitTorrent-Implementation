@@ -15,16 +15,13 @@ object Main extends IOApp.Simple {
 
     val file = new File("ubuntu.torrent")
     val inputStreamResource = createInputStreamResource(file)
-
+    val sttpBackendResource = Resource.make(AsyncHttpClientCatsBackend[IO]())(_.close())
     inputStreamResource.use { inputStream =>
       for {
         bytes <- IO.blocking(inputStream.readAllBytes())
         torrent <- parseTorrentFromBytes(bytes)
         _ <- IO.println(torrent)
-        backend <- AsyncHttpClientCatsBackend[IO]()
-        response <- request.send(backend)
-        _ <- IO.println(response)
-        _ <- backend.close()
+        _ <- Client.start(torrent)
       } yield ()
     }
   }
