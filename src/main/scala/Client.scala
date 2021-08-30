@@ -1,24 +1,37 @@
 import cats.effect.{IO, Ref}
 import cats.instances.seq._
 import cats.syntax.parallel._
+import com.comcast.ip4s.SocketAddress
+import fs2.io.net.Network
 
 import scala.concurrent.duration.DurationInt
 
 object Client {
   def start(torrent: Torrent): IO[Unit] = {
     for {
-      peersStateRef <- Ref.of[IO, PeersState](PeersState(Map.empty))
       announceResponse <- Tracker.sendFirstAnnounce(torrent)
-      peers = extractPeers(announceResponse, torrent.info.pieceCount)
-      _ <- peersStateRef.update(currentPeersState => currentPeersState.addNewPeers(peers))
+      initialPeersState = createInitialPeersState(announceResponse, torrent.info.pieceCount)
+      peersStateRef <- Ref.of[IO, PeersState](initialPeersState)
       state <- peersStateRef.get
       _ <- IO.println(state)
-      socketResources = peers.keySet.toSeq.take(5).map(MessageSocket.apply)
-      _ <- socketResources.map(socketResource => socketResource.use(PeerCommunication.apply)).parSequence
-      _ <- IO.sleep(30.seconds)
+      peerAddresses = initialPeersState.peers.keySet.toSeq
+      socketResources = createSocketResources(peerAddresses)
+      peersWork = socketResources.map {
+        socketResource => socketResource.use(socket => PeerCommunication.apply(socket, PeerState.startingState(10)))
+      }
+      _ <- peersWork.parSequence
     } yield ()
   }
 
-  private def extractPeers(announceResponse: AnnounceResponse, pieceCount: Long) =
-    announceResponse.peerAddresses.map(_ -> PeerState.startingState(pieceCount)).toMap
+  private def createSocketResources(peerAddresses: Seq[PeerAddress]) = {
+    peerAddresses.map { peerAddress =>
+      Network[IO].client(SocketAddress.fromString(peerAddress.ip).get)
+    }
+  }
+
+  private def createInitialPeersState(announceResponse: AnnounceResponse, pieceCount: Long) = {
+    val peersMap =
+      announceResponse.peerAddresses.map(peerAddress => peerAddress -> PeerState.startingState(pieceCount)).toMap
+    PeersState(peersMap)
+  }
 }

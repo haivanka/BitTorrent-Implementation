@@ -1,4 +1,4 @@
-import BinaryHelper.peerAddressCodec
+import Codecs.peerAddressCodec
 import scodec.Attempt.{Failure, Successful}
 import scodec.DecodeResult
 import scodec.bits.BitVector
