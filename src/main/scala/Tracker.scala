@@ -10,7 +10,7 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import scala.concurrent.duration.Duration
 
-case class AnnounceResponse(interval: Duration, peerAddresses: List[PeerAddress])
+case class AnnounceResponse(interval: Duration, peerAddresses: Set[PeerAddress])
 
 object Tracker {
   val defaultPeerId: ByteVector = ByteVector.view("-TRTS01-".getBytes).padRight(20)

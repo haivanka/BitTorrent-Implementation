@@ -1,6 +1,6 @@
 import scodec.bits.ByteVector
 
-object Network {
+object NetworkUtil {
   case class Handshake(pstrlen: Int, pstr: String, reserved: ByteVector, infoHash: ByteVector, peerId: ByteVector)
 
   object Handshake {

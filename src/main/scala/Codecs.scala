@@ -1,4 +1,4 @@
-import Network.Handshake
+import NetworkUtil.Handshake
 import scodec.Codec
 import scodec.codecs.{bytes, fixedSizeBytes, string, uint16, uint8}
 

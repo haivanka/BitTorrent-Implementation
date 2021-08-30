@@ -41,12 +41,12 @@ object Decoders {
       intervalBencoded <- m.get("interval")
       interval <- BDecoder[Duration].decode(intervalBencoded).toOption
       peersBencoded <- m.get("peers")
-      peers <-  BDecoder[List[PeerAddress]].decode(peersBencoded).toOption
+      peers <-  BDecoder[Set[PeerAddress]].decode(peersBencoded).toOption
     } yield AnnounceResponse(interval, peers)
     optionAnnounce.toRight(BencError.CodecError("Empty"))
   }
 
-  implicit val peerAddressesDecoder: BDecoder[List[PeerAddress]] = bitVectorBDecoder.map(parsePeerAddressesFromBits)
+  implicit val peerAddressesDecoder: BDecoder[Set[PeerAddress]] = bitVectorBDecoder.map(parsePeerAddressesFromBits)
 
   implicit val intervalDecoder: BDecoder[Duration] =
     longBDecoder.map(interval => Duration(interval, TimeUnit.SECONDS))
