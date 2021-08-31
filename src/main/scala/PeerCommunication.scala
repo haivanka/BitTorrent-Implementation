@@ -15,7 +15,7 @@ case class PeerCommunication(socket: Socket[IO]) {
       chunk <- convertHandshakeToChunk(handshake)
       _ <- socket.write(chunk)
       _ <- log("Sent handshake!")
-      response <- socket.readN(68).timeout(200.millis)
+      response <- socket.readN(68).timeout(1000.millis)
       _ <- log(s"Read ${response.size} bytes!")
       responseHandshake <- convertAttemptToIO(
         handshakeCodec.decode(response.toBitVector))
@@ -23,10 +23,8 @@ case class PeerCommunication(socket: Socket[IO]) {
       address <- socket.remoteAddress
       _ <- log(s"Finished!")
     } yield ()
-  }.handleError { f =>
-    println(s"Failed due to: ${f.getMessage}")
-    IO.unit
-  }
+  }.handleErrorWith(f => log(f.toString))
+
 
   def log(msg: String): IO[Unit] = socket.remoteAddress.map(address => println(s"[${address.host}]: $msg"))
 }
