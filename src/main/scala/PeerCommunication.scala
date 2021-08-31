@@ -7,6 +7,8 @@ import fs2.Chunk
 import fs2.io.net.{Network, Socket}
 import scodec.Attempt
 
+import scala.concurrent.duration.DurationInt
+
 case class PeerCommunication(socket: Socket[IO]) {
   def start(handshake: Handshake): IO[Unit] = {
     for {
@@ -14,10 +16,12 @@ case class PeerCommunication(socket: Socket[IO]) {
       _ <- socket.write(chunk)
       response <- socket.readN(68)
       _ <- IO.println(response)
-      responseHandshake <- convertAttemptToIO(handshakeCodec.decode(response.toBitVector))
+      responseHandshake <- convertAttemptToIO(
+        handshakeCodec.decode(response.toBitVector))
       _ <- IO.println(responseHandshake.value)
+      _ <- IO.sleep(5.seconds)
     } yield ()
-  }
+  }.handleError(_ => IO.unit)
 }
 
 object PeerCommunication {
