@@ -13,7 +13,7 @@ import scala.concurrent.duration.Duration
 case class AnnounceResponse(interval: Duration, peerAddresses: Set[PeerAddress])
 
 object Tracker {
-  val defaultPeerId: ByteVector = ByteVector.view("-TRTS01-".getBytes).padRight(20)
+  val defaultPeerId: ByteVector = ByteVector.view("valetilenka".getBytes).padRight(20)
 
   def sendFirstAnnounce(torrent: Torrent): IO[AnnounceResponse] = {
     Resource.make(AsyncHttpClientCatsBackend[IO]())(_.close()).use { backend =>
