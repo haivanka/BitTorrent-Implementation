@@ -14,14 +14,21 @@ case class PeerCommunication(socket: Socket[IO]) {
     for {
       chunk <- convertHandshakeToChunk(handshake)
       _ <- socket.write(chunk)
-      response <- socket.readN(68)
-      _ <- IO.println(response)
+      _ <- log("Sent handshake!")
+      response <- socket.readN(68).timeout(200.millis)
+      _ <- log(s"Read ${response.size} bytes!")
       responseHandshake <- convertAttemptToIO(
         handshakeCodec.decode(response.toBitVector))
-      _ <- IO.println(responseHandshake.value)
       _ <- IO.sleep(5.seconds)
+      address <- socket.remoteAddress
+      _ <- log(s"Finished!")
     } yield ()
-  }.handleError(_ => IO.unit)
+  }.handleError { f =>
+    println(s"Failed due to: ${f.getMessage}")
+    IO.unit
+  }
+
+  def log(msg: String): IO[Unit] = socket.remoteAddress.map(address => println(s"[${address.host}]: $msg"))
 }
 
 object PeerCommunication {
