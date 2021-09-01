@@ -3,8 +3,7 @@ import benc._
 import cats.effect.{IO, IOApp, Resource}
 import scodec.bits.BitVector
 
-import java.io.{File, FileInputStream}
-import scala.concurrent.duration.{DurationInt, SECONDS}
+import java.io.FileInputStream
 
 object Main extends IOApp.Simple {
 
@@ -24,10 +23,8 @@ object Main extends IOApp.Simple {
 //    val p2 = work
 //    for {
 //      start <- IO.monotonic.map(_.toMillis)
-//      _ <- p1
-//      x = p2.start
-//      y = p1
-//      _ <- p1
+//      _ <- p1.start
+//      _ <- p2
 //      end <- IO.monotonic.map(_.toMillis)
 //      _ <- IO.println(end - start)
 //    } yield ()
